@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc make libcriterion-dev bear
+
+    - name: Install local libs
+      run: |
+        git clone https://github.com/Shammas44/logger.git lib/logger
+        mkdir -p lib/logger/bin; make -C lib/logger
+
+    - name: Build and run tests
+      run: |
+        mkdir -p bin; make && make run_test
