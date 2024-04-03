@@ -31,6 +31,7 @@ static size_t __capacity(T *self);
 static size_t __length(T *self);
 static Item __get(T *self, char*key);
 static void __push(T *self, JSON_Hashmap_Entry entry);
+static int __delete(T *self, char* key);
 static char *__to_json(T *self);
 static char **__keys(T *self);
 static Item **__values(T *self);
@@ -64,6 +65,7 @@ T *hashmap_constructor(size_t initial_capacity) {
   self->capacity = __capacity;
   self->destructor = hashmap_destructor;
   self->get = __get;
+  self->delete = __delete;
   self->push = __push;
   self->to_json = __to_json;
   self->keys = __keys;
@@ -155,6 +157,27 @@ static Item __get(T *self, char*key) {
   Item item = _$get(self, key);
   pthread_mutex_unlock(&private->mutex);
   return item;
+}
+
+static int __delete(T *self, char* key){
+  Private *private = self->__private;
+  int status = 0;
+  pthread_mutex_lock(&private->mutex);
+  Entry *entries = private->entries;
+  unsigned int index = __$hash(key, private->capacity);
+  Entry entry;
+  while (entries[index].key != NULL) {
+    if (strcmp(entries[index].key, key) == 0) {
+      entry = entries[index];
+      _$free_entry(entry);
+      break;
+    }
+    // Linear probing for collision resolution
+    index = (index + 1) % private->capacity;
+  }
+  status = 1; 
+  pthread_mutex_unlock(&private->mutex);
+  return status;
 }
 
 static void __push(T *self, JSON_Hashmap_Entry entry) {

@@ -25,6 +25,7 @@ struct T {
  char *(*to_json)(T *self);
  size_t(*capacity)(T *self);
  size_t (*length)(T *self);
+ int (*delete)(T *self, char*key);
  Item** (*values)(T *self);
  char** (*keys)(T *self);
  JSON_Hashmap_Entry** (*entries)(T *self);
