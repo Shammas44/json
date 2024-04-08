@@ -78,6 +78,7 @@ static void __destructor(T *self) {
   size_t length = p->length;
   for (size_t i=0;i<length;i++) {
     Item *entry = p->array[i];
+    if(!entry) break;
     Item_type type = entry->type;
     void * value = entry->value;
     JSON_Hashmap* map;
