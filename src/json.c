@@ -35,7 +35,7 @@ int json_to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num
   }
   if(tokens[0].type != JSMN_ARRAY) return 0;
   if (token_num <= 0) return 0;
-  *array = array_constructor(token_num);
+  *array = JSON_array_constructor(token_num);
   if(array == NULL) return 0;
   for (int i = 1; i < token_num; i++) {
     int inner_token_num = 0;

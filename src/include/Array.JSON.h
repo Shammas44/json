@@ -32,8 +32,7 @@ struct T {
  void *__private;
 };
 
-T *array_constructor(size_t initial_size);
-void array_destructor(T* self);
+T *JSON_array_constructor(size_t initial_size);
 
 #undef T
 #endif

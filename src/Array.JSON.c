@@ -22,6 +22,7 @@ static Item __get(T *self, size_t index);
 static void __push(T *self, Item item);
 static char *__to_json(T *self);
 static size_t __length(T *self);
+static int __delete(T *self, char*key);
 static size_t __capacity(T *self);
 static void __destructor(T *self);
 static Item** __values(T *self);
@@ -35,7 +36,7 @@ static Item** _$values(T *self);
 static char** _$keys(T *self);
 static JSON_Array_Entry** _$entries(T *self);
 
-T *array_constructor(size_t size) {
+T *JSON_array_constructor(size_t size) {
   T *self = malloc(sizeof(T));
   if(size <= 0){
     LOG_ERROR("JSON_Array size should be greater than 0");
@@ -59,6 +60,7 @@ T *array_constructor(size_t size) {
   self->get = __get;
   self->length = __length;
   self->capacity = __capacity;
+  self->delete = __delete;
   self->push = __push;
   self->to_json = __to_json;
   self->keys = __keys;
@@ -121,6 +123,41 @@ static size_t __capacity(T *self){
   return value;
 }
 
+static int __delete(T *self, char*key){
+  Private *p = self->__private;
+  pthread_mutex_lock(&p->mutex);
+  int index = atoi(key);
+  Item *entry = p->array[index];
+  if(entry== NULL){
+    pthread_mutex_unlock(&p->mutex);
+    return 1;
+  }
+  Item_type type = entry->type;
+  void * value = entry->value;
+  JSON_Hashmap* map;
+  JSON_Array* array;
+  switch (type) {
+    case Item_null:
+      break;
+    case Item_array:
+      array = value;
+      array->destructor(array);
+      break;
+    case Item_map:
+      map = value;
+      map->destructor(map);
+      break;
+    default: 
+      free(value);
+      break;
+  }
+  p->length = p->length - 1;
+  free(entry);
+  p->array[index] = NULL;
+  pthread_mutex_unlock(&p->mutex);
+  return 0;
+}
+
 static Item __get(T *self, size_t index) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
@@ -141,9 +178,10 @@ static void __push(T *self, Item item) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
   Item *entry = malloc(sizeof(Item));
+  Item_type type = item.type;
   entry->type = item.value ==NULL
   ? Item_null
-  :item.type;
+  : type;
   entry->value = item.value;
   p->array[p->length] = entry;
   p->length++;
@@ -293,8 +331,8 @@ static Item _$get(T *self, size_t index) {
     LOG_ERROR("index out of bounds");
     return (Item){.type=Item_null,.value=NULL};
   }
-
   Item *entry = p->array[index];
+  if(entry == NULL) return (Item){.type=Item_null,.value=NULL}; 
   Item item = {.type=entry->type,.value=entry->value};
   return item;
 }

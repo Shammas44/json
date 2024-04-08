@@ -11,22 +11,24 @@ static void setup(void) {
   runtimeLogger_mode = LOG_RuntimeLogger_mode_silent;
 }
 
-static void teardown(void) { free(a); }
+static void teardown(void) { 
+  a->destructor(a);
+}
 
-Test(T, constructor_param_check, .fini = teardown, .init = setup) {
-  T*a = array_constructor(0);
+Test(T, constructor_param_check, .init = setup) {
+  T*a = JSON_array_constructor(0);
   cr_expect_null(a, "array is not null");
   cr_expect_neq(strcmp(LOG_runtimeLogger_get_last_log().message,"No error"),0);
 }
 
 Test(T, constructor_default_length, .fini = teardown, .init = setup) {
-  T*a = array_constructor(10);
+  a = JSON_array_constructor(10);
   cr_expect_not_null(a, "array is null");
   cr_expect_eq(a->length(a), 0);
 }
 
 Test(T, push_correct_length, .fini = teardown, .init = setup) {
-  T*a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char* value = malloc(sizeof(char)*10);
   sprintf(value,"test");
   a->push(a,(Item){.type=Item_string,.value=value});
@@ -35,7 +37,7 @@ Test(T, push_correct_length, .fini = teardown, .init = setup) {
 
 Test(T, push_correct_resizing, .fini = teardown, .init = setup) {
   size_t size = 5;
-  T*a = array_constructor(size);
+  a = JSON_array_constructor(size);
   for (size_t i = 0; i < size+1; i++) {
     char* value = malloc(sizeof(char)*10);
     sprintf(value,"test");
@@ -47,7 +49,7 @@ Test(T, push_correct_resizing, .fini = teardown, .init = setup) {
 
 Test(T, get_item_after_resize, .fini = teardown, .init = setup) {
   size_t size = 2;
-  T*a = array_constructor(size);
+  a = JSON_array_constructor(size);
   for (size_t i = 0; i < size+1; i++) {
     char* value = malloc(sizeof(char)*10);
     sprintf(value,"test%zu",i);
@@ -63,7 +65,7 @@ Test(T, get_item_after_resize, .fini = teardown, .init = setup) {
 
 Test(T, get_retrieve_items, .fini = teardown, .init = setup) {
   size_t size = 3;
-  T*a = array_constructor(size);
+  a = JSON_array_constructor(size);
   for (size_t i = 0; i < size+1; i++) {
     char* value = malloc(sizeof(char)*10);
     sprintf(value,"test %zu",i);
@@ -79,7 +81,7 @@ Test(T, get_retrieve_items, .fini = teardown, .init = setup) {
 
 Test(T, get_outOfBounds_check, .fini = teardown, .init = setup) {
   size_t size = 3;
-  T*a = array_constructor(size);
+  a = JSON_array_constructor(size);
   for (size_t i = 0; i < size+1; i++) {
     char* value = malloc(sizeof(char)*10);
     sprintf(value,"test %zu",i);
@@ -93,9 +95,9 @@ Test(T, get_outOfBounds_check, .fini = teardown, .init = setup) {
   cr_expect_eq(item1.value,NULL);
 }
 
-Test(T, destructor_is_truly_destroyed, .fini = teardown, .init = setup) {
+Test(T, destructor_is_truly_destroyed, .init = setup) {
   size_t size = 3;
-  T*a = array_constructor(size);
+  a = JSON_array_constructor(size);
   char* value0 = malloc(sizeof(char)*10);
   sprintf(value0,"test 0");
   a->push(a,(Item){.type=Item_string,.value=value0});
@@ -107,9 +109,9 @@ Test(T, destructor_is_truly_destroyed, .fini = teardown, .init = setup) {
   cr_expect_neq(strcmp(value1,"value1"),0, "values are the same");
 }
 
-Test(T, destructor_deep_array, .fini = teardown, .init = setup) {
-  T*a = array_constructor(3);
-  T*b = array_constructor(3);
+Test(T, destructor_deep_array, .init = setup) {
+  a = JSON_array_constructor(3);
+  T*b = JSON_array_constructor(3);
   char* value0 = malloc(sizeof(char)*10);
   sprintf(value0,"test0");
   char* value1 = malloc(sizeof(char)*10);
@@ -127,8 +129,8 @@ Test(T, destructor_deep_array, .fini = teardown, .init = setup) {
 }
 
 Test(T, get_retrieve_array, .fini = teardown, .init = setup) {
-  T*a = array_constructor(3);
-  T*b = array_constructor(3);
+  a = JSON_array_constructor(3);
+  T*b = JSON_array_constructor(3);
   char* value0 = malloc(sizeof(char)*10);
   sprintf(value0,"test0");
   char* value1 = malloc(sizeof(char)*10);
@@ -145,7 +147,7 @@ Test(T, get_retrieve_array, .fini = teardown, .init = setup) {
 }
 
 Test(T, keys_correct_keys, .init=setup, .fini = teardown) {
-  T*a = array_constructor(5);
+  a = JSON_array_constructor(5);
   int sum = 0;
   int result = 0;
   for (int i = 0; i < 5; i++) {
@@ -162,7 +164,7 @@ Test(T, keys_correct_keys, .init=setup, .fini = teardown) {
 }
 
 Test(T, values_correct_values, .init=setup, .fini = teardown) {
-  T*a = array_constructor(5);
+  a = JSON_array_constructor(5);
   int sumValues = 0;
   int sum = 0;
   for (int i = 0; i < 5; i++) {
@@ -175,13 +177,12 @@ Test(T, values_correct_values, .init=setup, .fini = teardown) {
   for (int i = 0; i < 5; i++) {
     int *value = values[i]->value;
     sumValues+= *value;
-    free(value);
   }
   cr_assert_eq(sumValues,sum, "Should be equal");
 }
 
 Test(T, entries_correct_values, .init=setup, .fini = teardown) {
-  T*a = array_constructor(5);
+  a = JSON_array_constructor(5);
   int sumValues = 0;
   int sumKeys = 0;
   int sum = 0;
@@ -197,7 +198,6 @@ Test(T, entries_correct_values, .init=setup, .fini = teardown) {
     char* key = values[i]->key;
     sumValues+= *value;
     sumKeys+= atoi(key);
-    free(value);
     free(key);
   }
   cr_assert_eq(sumValues,sum, "Should be equal");
@@ -205,7 +205,7 @@ Test(T, entries_correct_values, .init=setup, .fini = teardown) {
 }
 
 Test(T, to_json_correct_values, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[\"$\"]";
   Item item ={.type=Item_string,.value=strdup("$")};
   a->push(a, item);
@@ -214,7 +214,7 @@ Test(T, to_json_correct_values, .fini = teardown) {
 }
 
 Test(T, to_json_double_keys, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[\"$\",\"€\"]";
   Item item ={.type=Item_string,.value=strdup("$")};
   a->push(a ,item);
@@ -225,7 +225,7 @@ Test(T, to_json_double_keys, .fini = teardown) {
 }
 
 Test(T, to_json_double, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[2.5,2]";
   double *price = malloc(sizeof(double));
   *price = 2.5;
@@ -240,7 +240,7 @@ Test(T, to_json_double, .fini = teardown) {
 }
 
 Test(T, to_json_int, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[3,2]";
   int * price = malloc(sizeof(int));
   int * amount = malloc(sizeof(int));
@@ -255,7 +255,7 @@ Test(T, to_json_int, .fini = teardown) {
 }
 
 Test(T, to_json_boolean, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[false,true]";
   bool *price = malloc(sizeof(bool));
   bool *amount = malloc(sizeof(bool));
@@ -270,7 +270,7 @@ Test(T, to_json_boolean, .fini = teardown) {
 }
 
 Test(T, to_json_null, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[null,null]";
   char* price = NULL;
   char* amount = NULL;
@@ -283,7 +283,7 @@ Test(T, to_json_null, .fini = teardown) {
 }
 
 Test(T, to_json_hashmap, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[{\"value\":\"£\"},{\"value\":\"$\"}]";
   JSON_Hashmap* price = hashmap_constructor(1);
   JSON_Hashmap_Entry item ={.key="value",.type=Item_string,.value=strdup("£")};
@@ -300,18 +300,35 @@ Test(T, to_json_hashmap, .fini = teardown) {
 }
 
 Test(T, to_json_array, .fini = teardown) {
-  a = array_constructor(10);
+  a = JSON_array_constructor(10);
   char *res = "[[\"£\",\"$\"],[\"£\",\"$\"]]";
-  T*b = array_constructor(2);
-  T*c = array_constructor(2);
+  T*b = JSON_array_constructor(2);
+  T*c = JSON_array_constructor(2);
   Item item1 ={.type=Item_string,.value=strdup("£")};
   Item item2 ={.type=Item_string,.value=strdup("$")};
+  Item item3 ={.type=Item_string,.value=strdup("£")};
+  Item item4 ={.type=Item_string,.value=strdup("$")};
   b->push(b ,item1);
   b->push(b ,item2);
-  c->push(c ,item1);
-  c->push(c ,item2);
+  c->push(c ,item3);
+  c->push(c ,item4);
   a->push(a,(Item){.type=Item_array,.value=b});
   a->push(a,(Item){.type=Item_array,.value=c});
   char *json = a->to_json(a);
   cr_assert_eq(strcmp(json,res),0, "Should be equal");
+}
+
+Test(T, delete ) {
+  a = JSON_array_constructor(3);
+  Item item1 ={.type=Item_string,.value=strdup("1")};
+  a->push(a ,item1);
+  Item item2 ={.type=Item_string,.value=strdup("2")};
+  a->push(a ,item2);
+  Item item3 ={.type=Item_string,.value=strdup("3")};
+  a->push(a ,item3);
+  int status = a->delete(a,"1");
+  Item item = a->get(a,1);
+  cr_assert_eq(a->length(a), 2, "Should be equal");
+  cr_assert_null(item.value, "Should be null");
+  cr_assert_eq(status,0, "Should be equal");
 }
