@@ -170,6 +170,8 @@ static int __delete(T *self, char* key){
     if (strcmp(entries[index].key, key) == 0) {
       entry = entries[index];
       _$free_entry(entry);
+      entries[index].key = NULL;
+      private->length = private->length - 1;
       break;
     }
     // Linear probing for collision resolution

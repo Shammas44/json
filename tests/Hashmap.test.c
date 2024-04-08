@@ -5,7 +5,10 @@
 
 static T *map = NULL;
 static void setup(void) { map = hashmap_constructor(10); }
-static void teardown(void) { free(map); }
+
+static void teardown(void) { 
+  map->destructor(map);
+}
 
 Test(T, constructor_build, .init = setup, .fini = teardown) {
   cr_assert_not_null(map, "should not be NULL");
@@ -13,7 +16,7 @@ Test(T, constructor_build, .init = setup, .fini = teardown) {
   cr_assert_eq(map->length(map), 0, "Length should be 0");
 }
 
-Test(T, constructor_param_check, .fini = teardown) {
+Test(T, constructor_param_check) {
   map = hashmap_constructor(0);
   cr_assert_null(map, "should be NULL");
   map = hashmap_constructor(-1);
@@ -93,7 +96,7 @@ Test(T, push_replacement, .init = setup, .fini = teardown) {
   cr_assert_eq(strcmp(result, "€"), 0, "Should be equal");
 }
 
-Test(T, destructor_is_truly_destroyed, .fini = teardown) {
+Test(T, destructor_is_truly_destroyed) {
   T *map = hashmap_constructor(10);
   T *map2 = hashmap_constructor(10);
   char *value = malloc(sizeof(char) * 2);
@@ -268,7 +271,7 @@ Test(T, to_json_hashmap, .fini = teardown) {
 Test(T, to_json_array, .fini = teardown) {
   map = hashmap_constructor(10);
   char *res = "{\"price\":[\"$\",\"£\"]}";
-  JSON_Array *array = array_constructor(2);
+  JSON_Array *array = JSON_array_constructor(2);
   array->push(array, (Item){.type = Item_string, .value = strdup("$")});
   array->push(array, (Item){.type = Item_string, .value = strdup("£")});
   map->push(map, (JSON_Hashmap_Entry){
@@ -284,11 +287,13 @@ Test(T, delete, .fini = teardown) {
     sprintf(key, "%d", i);
     char *value = malloc(sizeof(char) * 3);
     sprintf(value, "%d", i);
-    JSON_Hashmap_Entry item = {.key = key, .type = Item_null, .value = value};
+    JSON_Hashmap_Entry item = {.key = key, .type = Item_string, .value = value};
     map->push(map, item);
   }
   int status = map->delete (map, "1");
-  cr_assert_eq(status, 1, "Should be equal");
+  size_t length = map->length(map);
+  cr_assert_eq(status, 1, "Wrong status code");
+  cr_assert_eq(length, 1, "Wrong length");
   Item item = map->get(map, "1");
   cr_assert_null(item.value, "Should be null");
 }
