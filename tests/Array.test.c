@@ -318,7 +318,7 @@ Test(T, to_json_array, .fini = teardown) {
   cr_assert_eq(strcmp(json,res),0, "Should be equal");
 }
 
-Test(T, delete ) {
+Test(T, delete, .fini=teardown ) {
   a = JSON_array_constructor(3);
   Item item1 ={.type=Item_string,.value=strdup("1")};
   a->push(a ,item1);
