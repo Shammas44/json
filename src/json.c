@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <logger.h>
-#include "json.h"
+#include "jsmn.JSON.h"
+#include "Hashmap.JSON.h"
 
 // =========================================================================="
 // Prototypes functions
@@ -11,12 +12,49 @@
 static int _$json_parse(char *json, jsmntok_t **tokens);
 static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num);
 static void *_$extract_string(char*json,jsmntok_t*token);
-
+static int _$to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_num);
+static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num);
 // =========================================================================="
 // Public functions
 // =========================================================================="
 
-int json_to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_num) {
+JSON_Item json_parse(char*input){
+  jsmntok_t *tokens = NULL;
+  int token_num = _$json_parse(input, &tokens);
+  void*value =NULL;
+  JSON_t output_t = JSON_t_null;
+  if(token_num <= 1) return (JSON_Item){.type=output_t,.value=NULL};
+  jsmntype_t type = tokens[0].type;
+  switch (type) {
+    case JSMN_OBJECT:
+      _$to_map(input, (JSON_Hashmap**)&value,NULL,0);
+      output_t = JSON_t_map;
+    break;
+    case JSMN_ARRAY:
+      _$to_array(input, (JSON_Array**)&value,NULL,0);
+      output_t = JSON_t_array;
+    break;
+    case JSMN_STRING:
+      value = NULL;
+      output_t = JSON_t_string;
+    break;
+    case JSMN_PRIMITIVE:
+      value = NULL;
+      output_t = JSON_t_double;
+    break;
+    case JSMN_UNDEFINED:
+      value = NULL;
+      output_t = JSON_t_string;
+    break;
+  }
+  return (JSON_Item){.type=output_t,.value=value};
+}
+
+// =========================================================================="
+// Private functions
+// =========================================================================="
+
+static int _$to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_num) {
   if(tokens ==NULL && token_num == 0){
    tokens = NULL;
    token_num = _$json_parse(json, &tokens);
@@ -27,7 +65,7 @@ int json_to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_num) 
   return token_num;
 }
 
-int json_to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num){
+static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num){
   void* value = NULL;
   if(tokens ==NULL && token_num == 0){
    tokens = NULL;
@@ -44,11 +82,11 @@ int json_to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num
     if(string == NULL) return 0;
 
     if(tokens[i].type == JSMN_OBJECT){
-      inner_token_num = json_to_map(string, (JSON_Hashmap**)&value,NULL,0);
+      inner_token_num = _$to_map(string, (JSON_Hashmap**)&value,NULL,0);
       inner_token_num--;
     }
     else if(tokens[i].type == JSMN_ARRAY){
-      inner_token_num = json_to_array(string, (JSON_Array**)&value,NULL,0);
+      inner_token_num = _$to_array(string, (JSON_Array**)&value,NULL,0);
       inner_token_num--;
     }else {
       value = string;
@@ -58,36 +96,6 @@ int json_to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num
   }
   return token_num;
 }
-
-void* json_parse(char*input){
-  jsmntok_t *tokens = NULL;
-  int token_num = _$json_parse(input, &tokens);
-  void*value =NULL;
-  if(token_num <= 1) return NULL;
-  jsmntype_t type = tokens[0].type;
-  switch (type) {
-    case JSMN_OBJECT:
-      json_to_map(input, (JSON_Hashmap**)&value,NULL,0);
-    break;
-    case JSMN_ARRAY:
-      json_to_array(input, (JSON_Array**)&value,NULL,0);
-    break;
-    case JSMN_STRING:
-      value = NULL;
-    break;
-    case JSMN_PRIMITIVE:
-      value = NULL;
-    break;
-    case JSMN_UNDEFINED:
-      value = NULL;
-    break;
-  }
-  return value;
-}
-
-// =========================================================================="
-// Private functions
-// =========================================================================="
 
 static int _$json_parse(char *json, jsmntok_t **tokens) {
   int token_num = 0;
@@ -181,12 +189,12 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           map->push(map,primitive_entry);
           break;
         case JSMN_OBJECT:
-          inner_token_num = json_to_map(value, &inner_map,NULL,0);
+          inner_token_num = _$to_map(value, &inner_map,NULL,0);
           inner_token_num--;
           map->push(map,(JSON_Hashmap_Entry){.key=key,.type=JSON_t_map,.value=inner_map});
           break;
         case JSMN_ARRAY:
-          inner_token_num = json_to_array(value,&inner_array,NULL,0);
+          inner_token_num = _$to_array(value,&inner_array,NULL,0);
           inner_token_num--;
           map->push(map,(JSON_Hashmap_Entry){.key=key,.type=JSON_t_array,.value=inner_array});
           break;
