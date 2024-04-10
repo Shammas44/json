@@ -407,7 +407,7 @@ void jsmn_init(jsmn_parser *parser) {
 *   Compares a token in the json object with the string s, returning true
 *   if it is equal.
 */
-bool json_equals(const char *json, jsmntok_t *tok, const char *s)
+bool jsmn_equals(const char *json, jsmntok_t *tok, const char *s)
 {
     if((json != NULL) && (tok != NULL) && (s != NULL))
     {
@@ -424,7 +424,7 @@ bool json_equals(const char *json, jsmntok_t *tok, const char *s)
 /*
 *   Finds the specified token
 */
-jsmntok_t * json_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStructure[], int structureSize)
+jsmntok_t * jsmn_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStructure[], int structureSize)
 {
     jsmntok_t * ptr = NULL;
 
@@ -432,7 +432,7 @@ jsmntok_t * json_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStru
     {
         for(int i = 0; i < structureSize; i++)
         {
-            if(json_equals(jsonData, &tokenStructure[i], key) == true)
+            if(jsmn_equals(jsonData, &tokenStructure[i], key) == true)
             {
                 ptr = &tokenStructure[i + 1];
                 break;
@@ -446,7 +446,7 @@ jsmntok_t * json_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStru
 /*
 *   Compares the value of the specified token with the json real value, returning true if it is equal.
 */
-bool json_compareKeyAndValue(char * key, char * value, char * jsonData, jsmntok_t tokenStructure[], int structureSize)
+bool jsmn_compareKeyAndValue(char * key, char * value, char * jsonData, jsmntok_t tokenStructure[], int structureSize)
 {
-    return(json_equals(jsonData, json_findTokenValue(key, jsonData, tokenStructure, structureSize), value));
+    return(jsmn_equals(jsonData, jsmn_findTokenValue(key, jsonData, tokenStructure, structureSize), value));
 }

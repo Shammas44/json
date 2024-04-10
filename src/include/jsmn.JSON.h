@@ -91,9 +91,8 @@ void jsmn_init(jsmn_parser *parser);
 int jsmn_parse(jsmn_parser *parser, const char *js, const int len,
                         jsmntok_t *tokens, const unsigned int num_tokens);
 // Added functions
-bool json_equals(const char *json, jsmntok_t *tok, const char *s);
-jsmntok_t * json_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStructure[], int structureSize);
-bool json_compareKeyAndValue(char * key, char * value, char * jsonData, jsmntok_t tokenStructure[], int structureSize);
-
+bool jsmn_equals(const char *json, jsmntok_t *tok, const char *s);
+jsmntok_t * jsmn_findTokenValue(char * key, char * jsonData, jsmntok_t tokenStructure[], int structureSize);
+bool jsmn_compareKeyAndValue(char * key, char * value, char * jsonData, jsmntok_t tokenStructure[], int structureSize);
 
 #endif /* JSMN_H */
