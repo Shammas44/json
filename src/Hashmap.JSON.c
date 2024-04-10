@@ -12,7 +12,7 @@
 typedef struct {
   char *key;
   void *value;
-  Item_type type;
+  JSON_t type;
   bool is_destroyable;
 } Entry;
 
@@ -29,12 +29,12 @@ static JSON_IsDestroyable d = {
 
 static size_t __capacity(T *self);
 static size_t __length(T *self);
-static Item __get(T *self, char*key);
+static JSON_Item __get(T *self, char*key);
 static void __push(T *self, JSON_Hashmap_Entry entry);
 static int __delete(T *self, char* key);
 static char *__to_json(T *self);
 static char **__keys(T *self);
-static Item **__values(T *self);
+static JSON_Item **__values(T *self);
 static JSON_Hashmap_Entry **__entries(T *self);
 
 static char *_$to_json(T *self);
@@ -44,9 +44,9 @@ static void _$free_entry(Entry entry);
 static void _$resize(T *self);
 static unsigned int __$hash(const char *key, size_t capacity);
 static char **_$keys(T *self);
-static Item **_$values(T *self);
+static JSON_Item **_$values(T *self);
 static JSON_Hashmap_Entry **_$entries(T *self);
-static Item _$get(T *self, char*key);
+static JSON_Item _$get(T *self, char*key);
 
 T *hashmap_constructor(size_t initial_capacity) {
   if (initial_capacity > MAX_CAPACITY)
@@ -135,10 +135,10 @@ static char **__keys(T *self) {
   return keys;
 }
 
-static Item **__values(T *self) {
+static JSON_Item **__values(T *self) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
-  Item **values = _$values(self);
+  JSON_Item **values = _$values(self);
   pthread_mutex_unlock(&p->mutex);
   return values;
 }
@@ -151,10 +151,10 @@ static JSON_Hashmap_Entry **__entries(T *self){
   return entries;
 }
 
-static Item __get(T *self, char*key) {
+static JSON_Item __get(T *self, char*key) {
   Private *private = self->__private;
   pthread_mutex_lock(&private->mutex);
-  Item item = _$get(self, key);
+  JSON_Item item = _$get(self, key);
   pthread_mutex_unlock(&private->mutex);
   return item;
 }
@@ -188,7 +188,7 @@ static void __push(T *self, JSON_Hashmap_Entry entry) {
   size_t *capacity = &private->capacity;
   size_t *length = &private->length;
   Entry *entries = private->entries;
-  Item_type type = entry.type;
+  JSON_t type = entry.type;
   void *value = entry.value;
   const char*key = entry.key;
 
@@ -222,7 +222,7 @@ static void __push(T *self, JSON_Hashmap_Entry entry) {
   entries[index].value = value;
   entries[index].type = type;
   entries[index].is_destroyable = false;
-  if(type == Item_map || type == Item_array) {
+  if(type == JSON_t_map || type == JSON_t_array) {
   entries[index].is_destroyable = true;
   }
 
@@ -268,17 +268,17 @@ static char* _$to_json(T* self) {
     JSON_Array*array;
 
     switch (entries[i]->type) {
-      case Item_string:
-      case Item_default:
+      case JSON_t_string:
+      case JSON_t_default:
         value = entries[i]->value;
         break;
 
-      case Item_double:
+      case JSON_t_double:
         value = _$convertToTrimmedString(*(double*)entries[i]->value);
         tick = "";
         break;
 
-      case Item_int:
+      case JSON_t_int:
         value = malloc(sizeof(char) * 100);
         if (value != NULL) {
           sprintf(value, "%d", *(int*)entries[i]->value);
@@ -289,21 +289,21 @@ static char* _$to_json(T* self) {
         }
         break;
 
-      case Item_bool:
+      case JSON_t_bool:
         value = *(bool*)entries[i]->value ? "true" : "false";
         tick = "";
         break;
 
-      case Item_null:
+      case JSON_t_null:
         value = "null";
         tick = "";
         break;
 
-      case Item_map:
+      case JSON_t_map:
         value = _$to_json(entries[i]->value);
         tick = "";
         break;
-      case Item_array:
+      case JSON_t_array:
         array = entries[i]->value;
         value = array->to_json(array);
         tick = "";
@@ -324,9 +324,9 @@ static char* _$to_json(T* self) {
     strcat(json, comma);
 
     // Free dynamically allocated memory for value (if any)
-    if (entries[i]->type == Item_int) {
+    if (entries[i]->type == JSON_t_int) {
       free(value);
-    } else if (entries[i]->type == Item_double || entries[i]->type == Item_map) {
+    } else if (entries[i]->type == JSON_t_double || entries[i]->type == JSON_t_map) {
       free(value);
     }
   }
@@ -447,7 +447,7 @@ static char **_$keys(T *self) {
   return output;
 }
 
-static Item _$get(T *self, char*key) {
+static JSON_Item _$get(T *self, char*key) {
   Private *private = self->__private;
   Entry *entries = private->entries;
   unsigned int index = __$hash(key, private->capacity);
@@ -455,28 +455,28 @@ static Item _$get(T *self, char*key) {
   while (entries[index].key != NULL) {
     if (strcmp(entries[index].key, key) == 0) {
       entry = entries[index];
-      return (Item){.type = entry.type, .value = entry.value};
+      return (JSON_Item){.type = entry.type, .value = entry.value};
     }
     // Linear probing for collision resolution
     index = (index + 1) % private->capacity;
   }
-  return (Item){.type = Item_null, .value = NULL};
+  return (JSON_Item){.type = JSON_t_null, .value = NULL};
 }
 
-static Item **_$values(T *self) {
+static JSON_Item **_$values(T *self) {
   Private *p = self->__private;
   size_t length = p->length;
   if(length == 0){
     return NULL;
   } 
-  Item **output = malloc(sizeof(Item *) * length);
+  JSON_Item **output = malloc(sizeof(JSON_Item *) * length);
   if (output == NULL){
     return NULL;
   } 
   char**keys = _$keys(self);
   for (size_t i=0; i < length; i++) {
-    Item item = _$get(self, keys[i]); 
-    output[i] = malloc(sizeof(Item));
+    JSON_Item item = _$get(self, keys[i]); 
+    output[i] = malloc(sizeof(JSON_Item));
     output[i]->value = item.value;
     output[i]->type = item.type;
   }
@@ -496,7 +496,7 @@ static JSON_Hashmap_Entry **_$entries(T *self){
   char**keys = _$keys(self);
   for (size_t i=0; i < length; i++) {
     char*key = keys[i];
-    Item item = _$get(self, key); 
+    JSON_Item item = _$get(self, key); 
     output[i] = malloc(sizeof(JSON_Hashmap_Entry));
     output[i]->key = key;
     output[i]->value = item.value;

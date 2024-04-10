@@ -10,7 +10,7 @@ typedef struct T T;
 
 typedef struct {
   char *key;
-  Item_type type;
+  JSON_t type;
   void*value;
 } JSON_Array_Entry;
 
@@ -20,13 +20,13 @@ typedef void(JSON_Array_destructor_callback)(void*value);
 struct T {
  JSON_IsDestroyable __destructor;
  JSON_Array_destructor *destructor;
- void(*push)(T *self, Item item);
- Item(*get)(T *self, size_t index);
+ void(*push)(T *self, JSON_Item item);
+ JSON_Item(*get)(T *self, size_t index);
  char *(*to_json)(T *self);
  size_t(*capacity)(T *self);
  size_t (*length)(T *self);
  int (*delete)(T *self, char*key);
- Item** (*values)(T *self);
+ JSON_Item** (*values)(T *self);
  char** (*keys)(T *self);
  JSON_Array_Entry** (*entries)(T *self);
  void *__private;

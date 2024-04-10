@@ -8,7 +8,7 @@
 #define T JSON_Array
 
 typedef struct {
-  Item **array;
+  JSON_Item **array;
   size_t length;
   size_t capacity;
   pthread_mutex_t mutex;
@@ -18,21 +18,21 @@ static JSON_IsDestroyable d = {
   .destructor = hashmap_destructor
 };
 
-static Item __get(T *self, size_t index);
-static void __push(T *self, Item item);
+static JSON_Item __get(T *self, size_t index);
+static void __push(T *self, JSON_Item item);
 static char *__to_json(T *self);
 static size_t __length(T *self);
 static int __delete(T *self, char*key);
 static size_t __capacity(T *self);
 static void __destructor(T *self);
-static Item** __values(T *self);
+static JSON_Item** __values(T *self);
 static char** __keys(T *self);
 static JSON_Array_Entry** __entries(T *self);
 
 static char* _$convertToTrimmedString(double num);
-static Item _$get(T *self, size_t index);
+static JSON_Item _$get(T *self, size_t index);
 static char *_$to_json(T *self);
-static Item** _$values(T *self);
+static JSON_Item** _$values(T *self);
 static char** _$keys(T *self);
 static JSON_Array_Entry** _$entries(T *self);
 
@@ -44,7 +44,7 @@ T *JSON_array_constructor(size_t size) {
   }
   self->length = 0;
   self->__private = malloc(sizeof(Private));
-  Item **array = malloc(sizeof(Item *) * size);
+  JSON_Item **array = malloc(sizeof(JSON_Item *) * size);
 
   for (size_t i = 0; i < size; i++) {
     array[i] = NULL;
@@ -77,20 +77,20 @@ static void __destructor(T *self) {
   pthread_mutex_lock(&p->mutex);
   size_t length = p->length;
   for (size_t i=0;i<length;i++) {
-    Item *entry = p->array[i];
+    JSON_Item *entry = p->array[i];
     if(!entry) break;
-    Item_type type = entry->type;
+    JSON_t type = entry->type;
     void * value = entry->value;
     JSON_Hashmap* map;
     JSON_Array* array;
     switch (type) {
-      case Item_null:
+      case JSON_t_null:
       break;
-      case Item_array:
+      case JSON_t_array:
         array = value;
         array->destructor(array);
       break;
-      case Item_map:
+      case JSON_t_map:
         map = value;
         map->destructor(map);
       break;
@@ -128,23 +128,23 @@ static int __delete(T *self, char*key){
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
   int index = atoi(key);
-  Item *entry = p->array[index];
+  JSON_Item *entry = p->array[index];
   if(entry== NULL){
     pthread_mutex_unlock(&p->mutex);
     return 1;
   }
-  Item_type type = entry->type;
+  JSON_t type = entry->type;
   void * value = entry->value;
   JSON_Hashmap* map;
   JSON_Array* array;
   switch (type) {
-    case Item_null:
+    case JSON_t_null:
       break;
-    case Item_array:
+    case JSON_t_array:
       array = value;
       array->destructor(array);
       break;
-    case Item_map:
+    case JSON_t_map:
       map = value;
       map->destructor(map);
       break;
@@ -159,10 +159,10 @@ static int __delete(T *self, char*key){
   return 0;
 }
 
-static Item __get(T *self, size_t index) {
+static JSON_Item __get(T *self, size_t index) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
-  Item value = _$get(self, index);
+  JSON_Item value = _$get(self, index);
   pthread_mutex_unlock(&p->mutex);
   return value;
 }
@@ -175,28 +175,28 @@ static JSON_Array_Entry** __entries(T *self) {
   return value;
 }
 
-static void __push(T *self, Item item) {
+static void __push(T *self, JSON_Item item) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
-  Item *entry = malloc(sizeof(Item));
-  Item_type type = item.type;
+  JSON_Item *entry = malloc(sizeof(JSON_Item));
+  JSON_t type = item.type;
   entry->type = item.value ==NULL
-  ? Item_null
+  ? JSON_t_null
   : type;
   entry->value = item.value;
   p->array[p->length] = entry;
   p->length++;
   if (p->length == p->capacity) {
      p->capacity = p->capacity * 2;
-     p->array = realloc(p->array, sizeof(Item *) * p->capacity);
+     p->array = realloc(p->array, sizeof(JSON_Item *) * p->capacity);
   }
   pthread_mutex_unlock(&p->mutex);
 }
 
-static Item** __values(T *self) {
+static JSON_Item** __values(T *self) {
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
-  Item **value = _$values(self);
+  JSON_Item **value = _$values(self);
   pthread_mutex_unlock(&p->mutex);
   return value;
 }
@@ -232,7 +232,7 @@ static char* _$to_json(T* self) {
 
     Private* p = self->__private;
     size_t length = p->length;
-    Item** values = _$values(self);
+    JSON_Item** values = _$values(self);
 
     for (size_t i = 0; i < length; i++) {
         char* value = NULL;
@@ -241,17 +241,17 @@ static char* _$to_json(T* self) {
         JSON_Hashmap*map;
 
         switch (values[i]->type) {
-            case Item_string:
-            case Item_default:
+            case JSON_t_string:
+            case JSON_t_default:
                 value = values[i]->value;
                 break;
 
-            case Item_double:
+            case JSON_t_double:
                 value = _$convertToTrimmedString(*(double*)values[i]->value);
                 tick = "";
                 break;
 
-            case Item_int:
+            case JSON_t_int:
                 value = malloc(sizeof(char) * 100);
                 if (value != NULL) {
                     sprintf(value, "%d", *(int*)values[i]->value);
@@ -262,21 +262,21 @@ static char* _$to_json(T* self) {
                 }
                 break;
 
-            case Item_bool:
+            case JSON_t_bool:
                 value = *(bool*)values[i]->value ? "true" : "false";
                 tick = "";
                 break;
 
-            case Item_null:
+            case JSON_t_null:
                 value = "null";
                 tick = "";
                 break;
 
-            case Item_array:
+            case JSON_t_array:
                 value = _$to_json(values[i]->value);
                 tick = "";
                 break;
-            case Item_map:
+            case JSON_t_map:
                 map = values[i]->value;
                 value = map->to_json(map);
                 tick = "";
@@ -294,9 +294,9 @@ static char* _$to_json(T* self) {
         strcat(json, comma);
 
         // Free dynamically allocated memory for value (if any)
-        if (values[i]->type == Item_int) {
+        if (values[i]->type == JSON_t_int) {
             free(value);
-        } else if (values[i]->type == Item_double || values[i]->type == Item_map) {
+        } else if (values[i]->type == JSON_t_double || values[i]->type == JSON_t_map) {
             free(value);
         }
     }
@@ -326,28 +326,28 @@ static char* _$convertToTrimmedString(double num) {
     return result;
 }
 
-static Item _$get(T *self, size_t index) {
+static JSON_Item _$get(T *self, size_t index) {
   Private *p = self->__private;
   if (index >= p->length) {
     LOG_ERROR("index out of bounds");
-    return (Item){.type=Item_null,.value=NULL};
+    return (JSON_Item){.type=JSON_t_null,.value=NULL};
   }
-  Item *entry = p->array[index];
-  if(entry == NULL) return (Item){.type=Item_null,.value=NULL}; 
-  Item item = {.type=entry->type,.value=entry->value};
+  JSON_Item *entry = p->array[index];
+  if(entry == NULL) return (JSON_Item){.type=JSON_t_null,.value=NULL}; 
+  JSON_Item item = {.type=entry->type,.value=entry->value};
   return item;
 }
 
-static Item** _$values(T *self){
+static JSON_Item** _$values(T *self){
   Private *p = self->__private;
   size_t length = p->length;
   if(length == 0) return NULL;
-  Item **output = malloc(sizeof(Item *) * length);
+  JSON_Item **output = malloc(sizeof(JSON_Item *) * length);
   if (output == NULL) return NULL;
 
   for (size_t i=0; i < length; i++) {
-    Item item = _$get(self, i); 
-    output[i] = malloc(sizeof(Item));
+    JSON_Item item = _$get(self, i); 
+    output[i] = malloc(sizeof(JSON_Item));
     output[i]->value = item.value;
     output[i]->type = item.type;
   }
@@ -389,7 +389,7 @@ static JSON_Array_Entry** _$entries(T *self){
   for (size_t i=0; i < length; i++) {
     char*key = malloc(sizeof(char*) * 16);
     sprintf(key,"%zu",i);
-    Item item = _$get(self, i); 
+    JSON_Item item = _$get(self, i); 
     output[i] = malloc(sizeof(JSON_Hashmap_Entry));
     output[i]->key = key;
     output[i]->value = item.value;

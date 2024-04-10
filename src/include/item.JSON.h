@@ -1,23 +1,23 @@
 #ifndef ITEM_H
 #define ITEM_H
-#define T Item
+#define T JSON_Item
 
 typedef struct T T;
 
 typedef enum {
-Item_default,
-Item_string,
-Item_float,
-Item_double,
-Item_bool,
-Item_int,
-Item_map,
-Item_array,
-Item_null,
-} Item_type;
+JSON_t_default,
+JSON_t_string,
+JSON_t_float,
+JSON_t_double,
+JSON_t_bool,
+JSON_t_int,
+JSON_t_map,
+JSON_t_array,
+JSON_t_null,
+} JSON_t;
 
 struct T {
-  Item_type type;
+  JSON_t type;
   void*value;
 };
 

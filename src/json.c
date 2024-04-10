@@ -53,7 +53,7 @@ int json_to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num
     }else {
       value = string;
     }
-    (*array)->push(*array,(Item){.type=Item_string,.value=value});
+    (*array)->push(*array,(JSON_Item){.type=JSON_t_string,.value=value});
     i+=inner_token_num;
   }
   return token_num;
@@ -157,17 +157,17 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
         if(strcasecmp(value, "true") == 0 || strcasecmp(value, "false") == 0){
           primitive = malloc(sizeof(bool));
           *(bool*)primitive = strcasecmp(value, "true") == 0 ? true : false;
-          primitive_entry.type = Item_bool;
+          primitive_entry.type = JSON_t_bool;
           primitive_entry.value = primitive;
         }else if(strcasecmp(value, "null") == 0){
           primitive = malloc(sizeof(char*) *5);
           sprintf(primitive,"%s",value);
-          primitive_entry.type = Item_null;
+          primitive_entry.type = JSON_t_null;
           primitive_entry.value = primitive;
         }else {
           primitive = malloc(sizeof(double));
           *(double*) primitive = atof(value);
-          primitive_entry.type = Item_double;
+          primitive_entry.type = JSON_t_double;
           primitive_entry.value = primitive;
         }
         free(value);
@@ -175,7 +175,7 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
 
       switch (tokens[i].type) {
         case JSMN_STRING:
-          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=Item_string,.value=value});
+          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=JSON_t_string,.value=value});
           break;
         case JSMN_PRIMITIVE:
           map->push(map,primitive_entry);
@@ -183,12 +183,12 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
         case JSMN_OBJECT:
           inner_token_num = json_to_map(value, &inner_map,NULL,0);
           inner_token_num--;
-          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=Item_map,.value=inner_map});
+          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=JSON_t_map,.value=inner_map});
           break;
         case JSMN_ARRAY:
           inner_token_num = json_to_array(value,&inner_array,NULL,0);
           inner_token_num--;
-          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=Item_array,.value=inner_array});
+          map->push(map,(JSON_Hashmap_Entry){.key=key,.type=JSON_t_array,.value=inner_array});
           break;
         default:
           LOG_ERROR("Unhandled type");
