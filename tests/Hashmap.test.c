@@ -4,7 +4,7 @@
 #define T JSON_Hashmap
 
 static T *map = NULL;
-static void setup(void) { map = hashmap_constructor(10); }
+static void setup(void) { map = JSON_hashmap_constructor(10); }
 
 static void teardown(void) { 
   map->destructor(map);
@@ -17,11 +17,11 @@ Test(T, constructor_build, .init = setup, .fini = teardown) {
 }
 
 Test(T, constructor_param_check) {
-  map = hashmap_constructor(0);
+  map = JSON_hashmap_constructor(0);
   cr_assert_null(map, "should be NULL");
-  map = hashmap_constructor(-1);
+  map = JSON_hashmap_constructor(-1);
   cr_assert_null(map, "should be NULL");
-  map = hashmap_constructor(1000000);
+  map = JSON_hashmap_constructor(1000000);
   cr_assert_null(map, "map should be NULL");
 }
 
@@ -73,7 +73,7 @@ Test(T, push_is_resized, .init = setup, .fini = teardown) {
 }
 
 Test(T, push_nested_hashmap, .init = setup, .fini = teardown) {
-  T *map2 = hashmap_constructor(10);
+  T *map2 = JSON_hashmap_constructor(10);
   JSON_Hashmap_Entry item = {
       .key = "DOLLAR", .type = JSON_t_string, .value = strdup("$")};
   map2->push(map2, item);
@@ -97,8 +97,8 @@ Test(T, push_replacement, .init = setup, .fini = teardown) {
 }
 
 Test(T, destructor_is_truly_destroyed) {
-  T *map = hashmap_constructor(10);
-  T *map2 = hashmap_constructor(10);
+  T *map = JSON_hashmap_constructor(10);
+  T *map2 = JSON_hashmap_constructor(10);
   char *value = malloc(sizeof(char) * 2);
   sprintf(value, "$");
   JSON_Hashmap_Entry item = {
@@ -163,7 +163,7 @@ Test(T, entries_simple, .init = setup, .fini = teardown) {
 }
 
 Test(T, to_json_correct_values, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"DOLLAR\":\"$\"}";
   JSON_Hashmap_Entry item = {
       .key = "DOLLAR", .type = JSON_t_string, .value = strdup("$")};
@@ -173,7 +173,7 @@ Test(T, to_json_correct_values, .fini = teardown) {
 }
 
 Test(T, to_json_double_keys, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"DOLLAR\":\"$\",\"EURO\":\"€\"}";
   JSON_Hashmap_Entry item = {
       .key = "DOLLAR", .type = JSON_t_string, .value = strdup("$")};
@@ -186,7 +186,7 @@ Test(T, to_json_double_keys, .fini = teardown) {
 }
 
 Test(T, to_json_double, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"amount\":2,\"price\":2.5}";
   double *price = malloc(sizeof(double));
   double *amount = malloc(sizeof(double));
@@ -203,7 +203,7 @@ Test(T, to_json_double, .fini = teardown) {
 }
 
 Test(T, to_json_int, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"amount\":2,\"price\":2}";
   int *price = malloc(sizeof(int));
   int *amount = malloc(sizeof(int));
@@ -219,7 +219,7 @@ Test(T, to_json_int, .fini = teardown) {
 }
 
 Test(T, to_json_boolean, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"amount\":true,\"price\":false}";
   bool *price = malloc(sizeof(bool));
   bool *amount = malloc(sizeof(bool));
@@ -235,7 +235,7 @@ Test(T, to_json_boolean, .fini = teardown) {
 }
 
 Test(T, to_json_null, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"amount\":null,\"price\":null}";
   char *price = NULL;
   char *amount = NULL;
@@ -249,13 +249,13 @@ Test(T, to_json_null, .fini = teardown) {
 }
 
 Test(T, to_json_hashmap, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"amount\":{\"value\":\"$\"},\"price\":{\"value\":\"£\"}}";
-  JSON_Hashmap *price = hashmap_constructor(1);
+  JSON_Hashmap *price = JSON_hashmap_constructor(1);
   JSON_Hashmap_Entry item = {
       .key = "value", .type = JSON_t_string, .value = strdup("£")};
   price->push(price, item);
-  JSON_Hashmap *amount = hashmap_constructor(1);
+  JSON_Hashmap *amount = JSON_hashmap_constructor(1);
   JSON_Hashmap_Entry item2 = {
       .key = "value", .type = JSON_t_string, .value = strdup("$")};
   amount->push(amount, item2);
@@ -269,7 +269,7 @@ Test(T, to_json_hashmap, .fini = teardown) {
 }
 
 Test(T, to_json_array, .fini = teardown) {
-  map = hashmap_constructor(10);
+  map = JSON_hashmap_constructor(10);
   char *res = "{\"price\":[\"$\",\"£\"]}";
   JSON_Array *array = JSON_array_constructor(2);
   array->push(array, (JSON_Item){.type = JSON_t_string, .value = strdup("$")});
@@ -281,7 +281,7 @@ Test(T, to_json_array, .fini = teardown) {
 }
 
 Test(T, delete, .fini = teardown) {
-  map = hashmap_constructor(2);
+  map = JSON_hashmap_constructor(2);
   char key[3];
   for (int i = 0; i < 2; i++) {
     sprintf(key, "%d", i);

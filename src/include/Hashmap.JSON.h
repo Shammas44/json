@@ -1,5 +1,5 @@
-#ifndef MAP_H
-#define MAP_H
+#ifndef MAP_JSON_H
+#define MAP_JSON_H
 #include "Array.JSON.h"
 #include "item.JSON.h"
 #include <stdbool.h>
@@ -32,8 +32,7 @@ struct T {
  void *__private;
 };
 
-T *hashmap_constructor(size_t initial_capacity);
-void hashmap_destructor(T *self);
+T *JSON_hashmap_constructor(size_t initial_capacity);
 
 #undef T
 #endif

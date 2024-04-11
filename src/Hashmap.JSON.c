@@ -23,10 +23,6 @@ typedef struct {
   pthread_mutex_t mutex;
 } Private;
 
-static JSON_IsDestroyable d = {
-  .destructor = hashmap_destructor
-};
-
 static size_t __capacity(T *self);
 static size_t __length(T *self);
 static JSON_Item __get(T *self, char*key);
@@ -36,6 +32,7 @@ static char *__to_json(T *self);
 static char **__keys(T *self);
 static JSON_Item **__values(T *self);
 static JSON_Hashmap_Entry **__entries(T *self);
+void __destructor(T *self);
 
 static char *_$to_json(T *self);
 static int _$compareStrings(const void *a, const void *b);
@@ -48,7 +45,12 @@ static JSON_Item **_$values(T *self);
 static JSON_Hashmap_Entry **_$entries(T *self);
 static JSON_Item _$get(T *self, char*key);
 
-T *hashmap_constructor(size_t initial_capacity) {
+static JSON_IsDestroyable d = {
+  .destructor = __destructor
+};
+
+
+T *JSON_hashmap_constructor(size_t initial_capacity) {
   if (initial_capacity > MAX_CAPACITY)
     return NULL;
   if (initial_capacity < 1)
@@ -63,7 +65,7 @@ T *hashmap_constructor(size_t initial_capacity) {
   self->__private = private;
   self->length = __length;
   self->capacity = __capacity;
-  self->destructor = hashmap_destructor;
+  self->destructor = __destructor;
   self->get = __get;
   self->delete = __delete;
   self->push = __push;
@@ -91,7 +93,7 @@ T *hashmap_constructor(size_t initial_capacity) {
   return NULL;
 }
 
-void hashmap_destructor(T *self) {
+void __destructor(T *self) {
   if (self != NULL) {
     Private *private = self->__private;
     pthread_mutex_lock(&private->mutex);

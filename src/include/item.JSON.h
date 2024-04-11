@@ -1,5 +1,5 @@
-#ifndef ITEM_H
-#define ITEM_H
+#ifndef ITEM_JSON_H
+#define ITEM_JSON_H
 #define T JSON_Item
 
 typedef struct T T;

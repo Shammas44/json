@@ -1,5 +1,5 @@
-#ifndef ISDESTROYABLE_H
-#define ISDESTROYABLE_H
+#ifndef ISDESTROYABLE_JSON_H
+#define ISDESTROYABLE_JSON_H
 #define T JSON_IsDestroyable
 
 typedef struct T {

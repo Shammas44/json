@@ -14,10 +14,6 @@ typedef struct {
   pthread_mutex_t mutex;
 } Private;
 
-static JSON_IsDestroyable d = {
-  .destructor = hashmap_destructor
-};
-
 static JSON_Item __get(T *self, size_t index);
 static void __push(T *self, JSON_Item item);
 static char *__to_json(T *self);
@@ -35,6 +31,10 @@ static char *_$to_json(T *self);
 static JSON_Item** _$values(T *self);
 static char** _$keys(T *self);
 static JSON_Array_Entry** _$entries(T *self);
+
+static JSON_IsDestroyable d = {
+  .destructor = __destructor
+};
 
 T *JSON_array_constructor(size_t size) {
   T *self = malloc(sizeof(T));
