@@ -36,7 +36,7 @@
 /**
  * JSON type identifier. Basic types are:
  * 	o Object
- * 	o JSON_Array
+ * 	o Array
  * 	o String
  * 	o Other primitive: number, boolean (true/false) or null
  */
