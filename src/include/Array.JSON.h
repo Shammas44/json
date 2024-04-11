@@ -8,15 +8,39 @@
 
 typedef struct T T;
 
+/**
+ * A cell of an array of type T
+ * key    Index of the cell (integer in a string format)
+ * type   Describe the kind of element in the cell
+ * value  The actual value from the cell
+ */
 typedef struct {
   char *key;
   JSON_t type;
   void*value;
 } JSON_Array_Entry;
 
+/**
+ * Free an array of type T
+ * @param: self The array to free
+ */
 typedef void(JSON_Array_destructor)(T *self);
-typedef void(JSON_Array_destructor_callback)(void*value);
 
+/**
+ * An heap allocated array datastructure kind
+ * __destructor  Private property (for internal use only)
+ * destructor    Free the Array and his values
+ * push          Add an element to the array
+ * get           Retrieve an element from the array
+ * to_json       Retrieve a json representation of the array
+ * capacity      Retrieve the current capacity of the array
+ * length        Retrieve the current length of the array
+ * delete        Remove and free an array cell
+ * values        Retrieve a raw array of JSON_Item's
+ * keys          Retrieve an array of the array's keys
+ * entries       Retrieve an array of keys and values
+ * __private     Private property (for internal use only)
+ */
 struct T {
  JSON_IsDestroyable __destructor;
  JSON_Array_destructor *destructor;
@@ -32,6 +56,11 @@ struct T {
  void *__private;
 };
 
+/**
+ * Create an array of type T
+ * @param: initial_size The default array size
+ * @return: An Heap allocated array of type T
+ */
 T *JSON_array_constructor(size_t initial_size);
 
 #undef T
