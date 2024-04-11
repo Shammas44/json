@@ -4,6 +4,7 @@
 #include <logger.h>
 #include "jsmn.JSON.h"
 #include "Hashmap.JSON.h"
+#include "parser.JSON.h"
 
 // =========================================================================="
 // Prototypes functions
@@ -14,11 +15,12 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num);
 static void *_$extract_string(char*json,jsmntok_t*token);
 static int _$to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_num);
 static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num);
+
 // =========================================================================="
 // Public functions
 // =========================================================================="
 
-JSON_Item json_parse(char*input){
+JSON_Item JSON_parse(char*input){
   jsmntok_t *tokens = NULL;
   int token_num = _$json_parse(input, &tokens);
   void*value =NULL;
@@ -144,7 +146,7 @@ static void *_$extract_string(char*json,jsmntok_t*token){
 }
 
 static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
-  JSON_Hashmap *map = hashmap_constructor(100);
+  JSON_Hashmap *map = JSON_hashmap_constructor(100);
   JSON_Hashmap*inner_map = NULL; 
   JSON_Array*inner_array = NULL; 
   if (map == NULL) return NULL;
