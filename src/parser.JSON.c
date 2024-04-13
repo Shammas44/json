@@ -49,6 +49,7 @@ JSON_Item JSON_parse(char*input){
       output_t = JSON_t_string;
     break;
   }
+  free(tokens);
   return (JSON_Item){.type=output_t,.value=value};
 }
 
@@ -61,9 +62,13 @@ static int _$to_map(char *json, JSON_Hashmap**map,jsmntok_t *tokens, int token_n
    tokens = NULL;
    token_num = _$json_parse(json, &tokens);
   }
-  if(tokens[0].type != JSMN_OBJECT) return 0;
   if (token_num <= 0) return -1;
+  if(tokens[0].type != JSMN_OBJECT){
+    free(tokens);
+    return -1;
+  } 
   *map = _$json_to(json, tokens, token_num);
+  free(tokens);
   return token_num;
 }
 
@@ -204,6 +209,8 @@ static JSON_Hashmap* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           LOG_ERROR("Unhandled type");
           break;
       }
+      //TODO: do I need to free the key ?
+      free(key);
       i+=inner_token_num;
     }
   }
