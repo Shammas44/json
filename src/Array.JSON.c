@@ -218,91 +218,95 @@ static char* __to_json(T* self) {
 }
 
 static char* _$to_json(T* self) {
-    if (self == NULL) {
+  if (self == NULL) {
+    return NULL;
+  }
+
+  const size_t initialCapacity = 100000;
+  char* json = malloc(sizeof(char) * initialCapacity);
+  if (json == NULL) {
+    return NULL;  // Memory allocation failure
+  }
+
+  strcpy(json, "[");
+
+  Private* p = self->__private;
+  size_t length = p->length;
+  JSON_Item** values = _$values(self);
+
+  for (size_t i = 0; i < length; i++) {
+    char* value = NULL;
+    char* tick = "\"";
+    char* comma = (i == length - 1) ? "" : ",";
+    JSON_Hashmap*map;
+
+    switch (values[i]->type) {
+      case JSON_t_string:
+      case JSON_t_default:
+        value = values[i]->value;
+        break;
+
+      case JSON_t_double:
+        value = _$convertToTrimmedString(*(double*)values[i]->value);
+        tick = "";
+        break;
+
+      case JSON_t_int:
+        value = malloc(sizeof(char) * 100);
+        if (value != NULL) {
+          sprintf(value, "%d", *(int*)values[i]->value);
+          tick = "";
+        } else {
+          free(json);
+          return NULL;  // Memory allocation failure
+        }
+        break;
+
+      case JSON_t_bool:
+        value = *(bool*)values[i]->value ? "true" : "false";
+        tick = "";
+        break;
+
+      case JSON_t_null:
+        value = "null";
+        tick = "";
+        break;
+
+      case JSON_t_array:
+        value = _$to_json(values[i]->value);
+        tick = "";
+        break;
+      case JSON_t_map:
+        map = values[i]->value;
+        value = map->to_json(map);
+        tick = "";
+        break;
+
+      default:
+        // Handle unsupported type or error
+        free(json);
         return NULL;
     }
 
-    const size_t initialCapacity = 100000;
-    char* json = malloc(sizeof(char) * initialCapacity);
-    if (json == NULL) {
-        return NULL;  // Memory allocation failure
+    strcat(json, tick);
+    strcat(json, value);
+    strcat(json, tick);
+    strcat(json, comma);
+
+    // Free dynamically allocated memory for value (if any)
+    if (values[i]->type == JSON_t_int) {
+      free(value);
+    } else if (values[i]->type == JSON_t_double || values[i]->type == JSON_t_map) {
+      free(value);
     }
+  }
 
-    strcpy(json, "[");
-
-    Private* p = self->__private;
-    size_t length = p->length;
-    JSON_Item** values = _$values(self);
-
-    for (size_t i = 0; i < length; i++) {
-        char* value = NULL;
-        char* tick = "\"";
-        char* comma = (i == length - 1) ? "" : ",";
-        JSON_Hashmap*map;
-
-        switch (values[i]->type) {
-            case JSON_t_string:
-            case JSON_t_default:
-                value = values[i]->value;
-                break;
-
-            case JSON_t_double:
-                value = _$convertToTrimmedString(*(double*)values[i]->value);
-                tick = "";
-                break;
-
-            case JSON_t_int:
-                value = malloc(sizeof(char) * 100);
-                if (value != NULL) {
-                    sprintf(value, "%d", *(int*)values[i]->value);
-                    tick = "";
-                } else {
-                    free(json);
-                    return NULL;  // Memory allocation failure
-                }
-                break;
-
-            case JSON_t_bool:
-                value = *(bool*)values[i]->value ? "true" : "false";
-                tick = "";
-                break;
-
-            case JSON_t_null:
-                value = "null";
-                tick = "";
-                break;
-
-            case JSON_t_array:
-                value = _$to_json(values[i]->value);
-                tick = "";
-                break;
-            case JSON_t_map:
-                map = values[i]->value;
-                value = map->to_json(map);
-                tick = "";
-                break;
-
-            default:
-                // Handle unsupported type or error
-                free(json);
-                return NULL;
-        }
-
-        strcat(json, tick);
-        strcat(json, value);
-        strcat(json, tick);
-        strcat(json, comma);
-
-        // Free dynamically allocated memory for value (if any)
-        if (values[i]->type == JSON_t_int) {
-            free(value);
-        } else if (values[i]->type == JSON_t_double || values[i]->type == JSON_t_map) {
-            free(value);
-        }
-    }
-
-    strcat(json, "]");
-    return json;
+  strcat(json, "]");
+  for (size_t i =0;i<length;i++) {
+    free(values[i]);
+  }
+  free(values);
+  return json;
 }
 
 static char* _$convertToTrimmedString(double num) {
@@ -357,12 +361,11 @@ static JSON_Item** _$values(T *self){
 static char** _$keys(T *self){
   Private *p = self->__private;
   size_t length = p->length;
-  size_t capacity = p->capacity;
   char **output = malloc(sizeof(char *) * length);
   size_t j = 0;
   if (output == NULL) return NULL;
 
-  for (size_t i = 0; i < capacity; i++) {
+  for (size_t i = 0; i < length; i++) {
       output[j] = malloc(sizeof(char*) * 16); 
       if (output[j] != NULL) {
         sprintf(output[j],"%zu",i);

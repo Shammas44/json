@@ -101,6 +101,7 @@ static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token
     (*array)->push(*array,(JSON_Item){.type=JSON_t_string,.value=value});
     i+=inner_token_num;
   }
+  free(tokens);
   return token_num;
 }
 
