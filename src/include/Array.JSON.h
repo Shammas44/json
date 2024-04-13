@@ -37,8 +37,15 @@ typedef void(JSON_Array_destructor)(T *self);
  *   length        Retrieve the current length of the array
  *   delete        Remove and free an array cell
  *   values        Retrieve a raw array of JSON_Item's
+ *                   - The JSON_Item's array need to be free after usage
+ *                   - Each JSON_Item's value is a direct reference to the array value, don't free them. 
  *   keys          Retrieve an array of the array's keys
+ *                   - The JSON_Item's array need to be free
+ *                   - Each JSON_Item's key need to be free
  *   entries       Retrieve an array of keys and values
+ *                   - The JSON_Array_Entry's array need to be free
+ *                   - Each JSON_Array_Entry's key need to be free
+ *                   - Each JSON_Array_Entry value is a direct reference to the array value, don't free them. 
  *   __private     Private property (for internal use only)
  */
 struct T {

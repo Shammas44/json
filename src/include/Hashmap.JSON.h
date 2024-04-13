@@ -37,8 +37,15 @@ typedef void(JSON_Hashmap_destructor)(T *self);
  *   length        Retrieve the current length of the hashmp
  *   delete        Remove and free an hashmap element
  *   values        Retrieve a raw array of JSON_Item's
+ *                   - The JSON_Item's array need to be free
+ *                   - Each JSON_Item's value is a direct reference to the array value, don't free them. 
  *   keys          Retrieve an array of the hashmap's keys
+ *                   - The JSON_Item's array need to be free
+ *                   - Each JSON_Item's key need to be free
  *   entries       Retrieve an array of keys and values
+ *                   - The JSON_Hashmap_Entry's hashmap need to be free
+ *                   - Each JSON_Item's key need to be free
+ *                   - Each JSON_Hashmap_Entry's value is a direct reference to the hashmap value, don't free them. 
  *   __private     Private property (for internal use only)
  */
 struct T {
