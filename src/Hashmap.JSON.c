@@ -326,14 +326,19 @@ static char* _$to_json(T* self) {
     strcat(json, comma);
 
     // Free dynamically allocated memory for value (if any)
-    if (entries[i]->type == JSON_t_int) {
-      free(value);
-    } else if (entries[i]->type == JSON_t_double || entries[i]->type == JSON_t_map) {
-      free(value);
+    JSON_t to_free[4] = {JSON_t_int,JSON_t_double,JSON_t_array,JSON_t_map};
+    for (int j=0; j<4; j++) {
+    if (entries[i]->type == to_free[j]) {
+        free(value);
+        break;
+      }
     }
+    free(key);
+    free(entries[i]);
   }
 
   strcat(json, "}");
+  free(entries);
   return json;
 }
 
@@ -481,7 +486,9 @@ static JSON_Item **_$values(T *self) {
     output[i] = malloc(sizeof(JSON_Item));
     output[i]->value = item.value;
     output[i]->type = item.type;
+    free(keys[i]);
   }
+  free(keys);
   return output;
 }
 
@@ -504,6 +511,7 @@ static JSON_Hashmap_Entry **_$entries(T *self){
     output[i]->value = item.value;
     output[i]->type = item.type;
   }
+  free(keys);
   return output;
 }
 

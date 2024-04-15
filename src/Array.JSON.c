@@ -293,11 +293,12 @@ static char* _$to_json(T* self) {
     strcat(json, tick);
     strcat(json, comma);
 
-    // Free dynamically allocated memory for value (if any)
-    if (values[i]->type == JSON_t_int) {
-      free(value);
-    } else if (values[i]->type == JSON_t_double || values[i]->type == JSON_t_map) {
-      free(value);
+    JSON_t to_free[4] = {JSON_t_int,JSON_t_double,JSON_t_array,JSON_t_map};
+    for (int j=0; j<4; j++) {
+    if (values[i]->type == to_free[j]) {
+        free(value);
+        break;
+      }
     }
   }
 
