@@ -282,14 +282,14 @@ Test(T, to_json_null, .fini = teardown) {
   cr_assert_eq(strcmp(json,res),0, "Should be equal");
 }
 
-Test(T, to_json_hashmap, .fini = teardown) {
+Test(T, to_json_map, .fini = teardown) {
   a = JSON_array_constructor(10);
   char *res = "[{\"value\":\"£\"},{\"value\":\"$\"}]";
-  JSON_Hashmap* price = JSON_hashmap_constructor(1);
-  JSON_Hashmap_Entry item ={.key="value",.type=JSON_t_string,.value=strdup("£")};
+  JSON_map* price = JSON_map_constructor(1);
+  JSON_Map_Entry item ={.key="value",.type=JSON_t_string,.value=strdup("£")};
   price->push(price ,item);
-  JSON_Hashmap* amount = JSON_hashmap_constructor(1);
-  JSON_Hashmap_Entry item2 ={.key="value",.type=JSON_t_string,.value=strdup("$")};
+  JSON_map* amount = JSON_map_constructor(1);
+  JSON_Map_Entry item2 ={.key="value",.type=JSON_t_string,.value=strdup("$")};
   amount->push(amount ,item2);
   JSON_Item item3 ={.type=JSON_t_map,.value=price};
   a->push(a ,item3);

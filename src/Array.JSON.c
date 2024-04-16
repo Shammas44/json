@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Array.JSON.h"
-#include "Hashmap.JSON.h"
+#include "Map.JSON.h"
 #define T JSON_Array
 
 typedef struct {
@@ -81,7 +81,7 @@ static void __destructor(T *self) {
     if(!entry) break;
     JSON_t type = entry->type;
     void * value = entry->value;
-    JSON_Hashmap* map;
+    JSON_map* map;
     JSON_Array* array;
     switch (type) {
       case JSON_t_null:
@@ -135,7 +135,7 @@ static int __delete(T *self, char*key){
   }
   JSON_t type = entry->type;
   void * value = entry->value;
-  JSON_Hashmap* map;
+  JSON_map* map;
   JSON_Array* array;
   switch (type) {
     case JSON_t_null:
@@ -238,7 +238,7 @@ static char* _$to_json(T* self) {
     char* value = NULL;
     char* tick = "\"";
     char* comma = (i == length - 1) ? "" : ",";
-    JSON_Hashmap*map;
+    JSON_map*map;
 
     switch (values[i]->type) {
       case JSON_t_string:
@@ -394,7 +394,7 @@ static JSON_Array_Entry** _$entries(T *self){
     char*key = malloc(sizeof(char*) * 16);
     sprintf(key,"%zu",i);
     JSON_Item item = _$get(self, i); 
-    output[i] = malloc(sizeof(JSON_Hashmap_Entry));
+    output[i] = malloc(sizeof(JSON_Map_Entry));
     output[i]->key = key;
     output[i]->value = item.value;
     output[i]->type = item.type;

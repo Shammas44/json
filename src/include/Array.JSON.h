@@ -6,6 +6,11 @@
 
 #define T JSON_Array
 
+#define JSON_ARRAY_PUSH(array, ...) \
+    do { \
+        array->push(array, (JSON_Item){ __VA_ARGS__ }); \
+    } while(0)
+
 typedef struct T T;
 
 /**

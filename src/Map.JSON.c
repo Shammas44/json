@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Hashmap.JSON.h"
+#include "Map.JSON.h"
 #include "Array.JSON.h"
-#define T JSON_Hashmap
+#define T JSON_map
 #define MAX_CAPACITY 10000
 #define LOAD_FACTOR_THRESHOLD 0.7
 
@@ -26,12 +26,12 @@ typedef struct {
 static size_t __capacity(T *self);
 static size_t __length(T *self);
 static JSON_Item __get(T *self, char*key);
-static void __push(T *self, JSON_Hashmap_Entry entry);
+static void __push(T *self, JSON_Map_Entry entry);
 static int __delete(T *self, char* key);
 static char *__to_json(T *self);
 static char **__keys(T *self);
 static JSON_Item **__values(T *self);
-static JSON_Hashmap_Entry **__entries(T *self);
+static JSON_Map_Entry **__entries(T *self);
 void __destructor(T *self);
 
 static char *_$to_json(T *self);
@@ -42,7 +42,7 @@ static void _$resize(T *self);
 static unsigned int __$hash(const char *key, size_t capacity);
 static char **_$keys(T *self);
 static JSON_Item **_$values(T *self);
-static JSON_Hashmap_Entry **_$entries(T *self);
+static JSON_Map_Entry **_$entries(T *self);
 static JSON_Item _$get(T *self, char*key);
 
 static JSON_IsDestroyable d = {
@@ -50,7 +50,7 @@ static JSON_IsDestroyable d = {
 };
 
 
-T *JSON_hashmap_constructor(size_t initial_capacity) {
+T *JSON_map_constructor(size_t initial_capacity) {
   if (initial_capacity > MAX_CAPACITY)
     return NULL;
   if (initial_capacity < 1)
@@ -145,10 +145,10 @@ static JSON_Item **__values(T *self) {
   return values;
 }
 
-static JSON_Hashmap_Entry **__entries(T *self){
+static JSON_Map_Entry **__entries(T *self){
   Private *p = self->__private;
   pthread_mutex_lock(&p->mutex);
-  JSON_Hashmap_Entry **entries = _$entries(self);
+  JSON_Map_Entry **entries = _$entries(self);
   pthread_mutex_unlock(&p->mutex);
   return entries;
 }
@@ -184,7 +184,7 @@ static int __delete(T *self, char* key){
   return status;
 }
 
-static void __push(T *self, JSON_Hashmap_Entry entry) {
+static void __push(T *self, JSON_Map_Entry entry) {
   Private *private = self->__private;
   pthread_mutex_lock(&private->mutex);
   size_t *capacity = &private->capacity;
@@ -260,7 +260,7 @@ static char* _$to_json(T* self) {
 
   Private* p = self->__private;
   size_t length = p->length;
-  JSON_Hashmap_Entry** entries = _$entries(self);
+  JSON_Map_Entry** entries = _$entries(self);
 
   for (size_t i = 0; i < length; i++) {
     char* key = entries[i]->key;
@@ -396,7 +396,7 @@ static void _$resize(T *self) {
       }
     }
 
-    // Free the old entries and update hashmap properties
+    // Free the old entries and update map properties
     free(entries);
     private->entries = new_entries;
     private->capacity = new_capacity;
@@ -492,13 +492,13 @@ static JSON_Item **_$values(T *self) {
   return output;
 }
 
-static JSON_Hashmap_Entry **_$entries(T *self){
+static JSON_Map_Entry **_$entries(T *self){
   Private *p = self->__private;
   size_t length = p->length;
   if(length == 0){
     return NULL;
   } 
-  JSON_Hashmap_Entry **output = malloc(sizeof(JSON_Hashmap_Entry *) * length);
+  JSON_Map_Entry **output = malloc(sizeof(JSON_Map_Entry *) * length);
   if (output == NULL){
     return NULL;
   } 
@@ -506,7 +506,7 @@ static JSON_Hashmap_Entry **_$entries(T *self){
   for (size_t i=0; i < length; i++) {
     char*key = keys[i];
     JSON_Item item = _$get(self, key); 
-    output[i] = malloc(sizeof(JSON_Hashmap_Entry));
+    output[i] = malloc(sizeof(JSON_Map_Entry));
     output[i]->key = key;
     output[i]->value = item.value;
     output[i]->type = item.type;

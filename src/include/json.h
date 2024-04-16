@@ -1,6 +1,6 @@
 #ifndef JSON_H
 #define JSON_H
-#include "Hashmap.JSON.h"
+#include "Map.JSON.h"
 #include "Array.JSON.h"
 #include "item.JSON.h"
 #include "jsmn.JSON.h"

@@ -20,7 +20,7 @@ typedef enum {
 } JSON_t;
 
 /**
- * A struct to represent a value return from an JSON_Array or JSON_Hashmap
+ * A struct to represent a value return from an JSON_Array or JSON_map
  *   type   the type of data of the item
  *   value  the actual value of the item
  */
