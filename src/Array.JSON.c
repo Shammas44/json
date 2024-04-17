@@ -81,7 +81,7 @@ static void __destructor(T *self) {
     if(!entry) break;
     JSON_t type = entry->type;
     void * value = entry->value;
-    JSON_map* map;
+    JSON_Map* map;
     JSON_Array* array;
     switch (type) {
       case JSON_t_null:
@@ -135,7 +135,7 @@ static int __delete(T *self, char*key){
   }
   JSON_t type = entry->type;
   void * value = entry->value;
-  JSON_map* map;
+  JSON_Map* map;
   JSON_Array* array;
   switch (type) {
     case JSON_t_null:
@@ -238,7 +238,7 @@ static char* _$to_json(T* self) {
     char* value = NULL;
     char* tick = "\"";
     char* comma = (i == length - 1) ? "" : ",";
-    JSON_map*map;
+    JSON_Map*map;
 
     switch (values[i]->type) {
       case JSON_t_string:

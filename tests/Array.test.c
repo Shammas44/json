@@ -285,10 +285,10 @@ Test(T, to_json_null, .fini = teardown) {
 Test(T, to_json_map, .fini = teardown) {
   a = JSON_array_constructor(10);
   char *res = "[{\"value\":\"£\"},{\"value\":\"$\"}]";
-  JSON_map* price = JSON_map_constructor(1);
+  JSON_Map* price = JSON_map_constructor(1);
   JSON_Map_Entry item ={.key="value",.type=JSON_t_string,.value=strdup("£")};
   price->push(price ,item);
-  JSON_map* amount = JSON_map_constructor(1);
+  JSON_Map* amount = JSON_map_constructor(1);
   JSON_Map_Entry item2 ={.key="value",.type=JSON_t_string,.value=strdup("$")};
   amount->push(amount ,item2);
   JSON_Item item3 ={.type=JSON_t_map,.value=price};

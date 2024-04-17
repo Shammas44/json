@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define T JSON_map
+#define T JSON_Map
 
 #define JSON_MAP_PUSH(map, ...) \
     do { \

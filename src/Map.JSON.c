@@ -5,7 +5,7 @@
 #include <string.h>
 #include "Map.JSON.h"
 #include "Array.JSON.h"
-#define T JSON_map
+#define T JSON_Map
 #define MAX_CAPACITY 10000
 #define LOAD_FACTOR_THRESHOLD 0.7
 

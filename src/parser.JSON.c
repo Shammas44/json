@@ -11,9 +11,9 @@
 // =========================================================================="
 
 static int _$json_parse(char *json, jsmntok_t **tokens);
-static JSON_map* _$json_to(char *json, jsmntok_t *tokens, int token_num);
+static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num);
 static void *_$extract_string(char*json,jsmntok_t*token);
-static int _$to_map(char *json, JSON_map**map,jsmntok_t *tokens, int token_num);
+static int _$to_map(char *json, JSON_Map**map,jsmntok_t *tokens, int token_num);
 static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num);
 
 // =========================================================================="
@@ -29,7 +29,7 @@ JSON_Item JSON_parse(char*input){
   jsmntype_t type = tokens[0].type;
   switch (type) {
     case JSMN_OBJECT:
-      _$to_map(input, (JSON_map**)&value,NULL,0);
+      _$to_map(input, (JSON_Map**)&value,NULL,0);
       output_t = JSON_t_map;
     break;
     case JSMN_ARRAY:
@@ -57,7 +57,7 @@ JSON_Item JSON_parse(char*input){
 // Private functions
 // =========================================================================="
 
-static int _$to_map(char *json, JSON_map**map,jsmntok_t *tokens, int token_num) {
+static int _$to_map(char *json, JSON_Map**map,jsmntok_t *tokens, int token_num) {
   if(tokens ==NULL && token_num == 0){
    tokens = NULL;
    token_num = _$json_parse(json, &tokens);
@@ -74,6 +74,7 @@ static int _$to_map(char *json, JSON_map**map,jsmntok_t *tokens, int token_num) 
 
 static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token_num){
   void* value = NULL;
+  JSON_t type;
   if(tokens ==NULL && token_num == 0){
    tokens = NULL;
    token_num = _$json_parse(json, &tokens);
@@ -89,18 +90,24 @@ static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token
     if(string == NULL) return 0;
 
     if(tokens[i].type == JSMN_OBJECT){
-      inner_token_num = _$to_map(string, (JSON_map**)&value,NULL,0);
+      inner_token_num = _$to_map(string, (JSON_Map**)&value,NULL,0);
       inner_token_num--;
+      type = JSON_t_map;
+      free(string);
     }
     else if(tokens[i].type == JSMN_ARRAY){
       inner_token_num = _$to_array(string, (JSON_Array**)&value,NULL,0);
       inner_token_num--;
+      type = JSON_t_array;
+      free(string);
     }else {
       value = string;
+      type = JSON_t_string;
     }
-    (*array)->push(*array,(JSON_Item){.type=JSON_t_string,.value=value});
+    (*array)->push(*array,(JSON_Item){.type=type,.value=value});
     i+=inner_token_num;
   }
+  
   free(tokens);
   return token_num;
 }
@@ -151,9 +158,9 @@ static void *_$extract_string(char*json,jsmntok_t*token){
       return string;
 }
 
-static JSON_map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
-  JSON_map *map = JSON_map_constructor(100);
-  JSON_map*inner_map = NULL; 
+static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
+  JSON_Map *map = JSON_map_constructor(100);
+  JSON_Map*inner_map = NULL; 
   JSON_Array*inner_array = NULL; 
   if (map == NULL) return NULL;
 
@@ -200,11 +207,13 @@ static JSON_map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           inner_token_num = _$to_map(value, &inner_map,NULL,0);
           inner_token_num--;
           map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_map,.value=inner_map});
+          free(value);
           break;
         case JSMN_ARRAY:
           inner_token_num = _$to_array(value,&inner_array,NULL,0);
           inner_token_num--;
           map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_array,.value=inner_array});
+          free(value);
           break;
         default:
           LOG_ERROR("Unhandled type");
