@@ -1,5 +1,5 @@
-#ifndef ARRAY_H
-#define ARRAY_H
+#ifndef ARRAY_JSON_H
+#define ARRAY_JSON_H
 #include <stddef.h>
 #include "item.JSON.h"
 #include "isDestroyable.JSON.h"
