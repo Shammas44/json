@@ -15,7 +15,7 @@
 typedef struct T T;
 
 /**
- * An element of an map of type T
+ * An element of a map of type T
  *   key    key of the element
  *   type   Describe the kind of element of the element
  *   value  The actual value from the element
@@ -27,7 +27,7 @@ typedef struct {
 } JSON_Map_Entry;
 
 /**
- * Free an map of type T
+ * Free a map of type T
  *   @param self  The map to free
  */
 typedef void(JSON_Map_destructor)(T *self);
@@ -41,7 +41,7 @@ typedef void(JSON_Map_destructor)(T *self);
  *   to_json       Retrieve a json representation of the map
  *   capacity      Retrieve the current capacity of the map
  *   length        Retrieve the current length of the hashmp
- *   delete        Remove and free an map element
+ *   delete        Remove and free a map element
  *   values        Retrieve a raw array of JSON_Item's
  *                   - The JSON_Item's array need to be free
  *                   - Each JSON_Item's value is a direct reference to the array value, don't free them. 
