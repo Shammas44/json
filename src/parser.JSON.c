@@ -187,8 +187,6 @@ static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           primitive_entry.type = JSON_t_bool;
           primitive_entry.value = primitive;
         }else if(strcasecmp(value, "null") == 0){
-          // primitive = malloc(sizeof(char*) *5);
-          // sprintf(primitive,"%s",value);
           primitive_entry.type = JSON_t_null;
           primitive_entry.value = NULL;
         }else {
@@ -200,28 +198,32 @@ static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
         free(value);
       }
 
-      switch (tokens[i].type) {
-        case JSMN_STRING:
-          map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_string,.value=value});
-          break;
-        case JSMN_PRIMITIVE:
-          map->push(map,primitive_entry);
-          break;
-        case JSMN_OBJECT:
-          inner_token_num = _$to_map(value, &inner_map,NULL,0);
-          inner_token_num--;
-          map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_map,.value=inner_map});
-          free(value);
-          break;
-        case JSMN_ARRAY:
-          inner_token_num = _$to_array(value,&inner_array,NULL,0);
-          inner_token_num--;
-          map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_array,.value=inner_array});
-          free(value);
-          break;
-        default:
-          LOG_ERROR("Unhandled type");
-          break;
+      if(value!=NULL){
+        switch (tokens[i].type) {
+          case JSMN_STRING:
+            map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_string,.value=value});
+            break;
+          case JSMN_PRIMITIVE:
+            map->push(map,primitive_entry);
+            break;
+          case JSMN_OBJECT:
+            inner_token_num = _$to_map(value, &inner_map,NULL,0);
+            inner_token_num--;
+            map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_map,.value=inner_map});
+            free(value);
+            break;
+          case JSMN_ARRAY:
+            inner_token_num = _$to_array(value,&inner_array,NULL,0);
+            inner_token_num--;
+            map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_array,.value=inner_array});
+            free(value);
+            break;
+          default:
+            LOG_ERROR("Unhandled type");
+            break;
+        }
+      }else{
+        map->push(map,(JSON_Map_Entry){.key=key,.type=JSON_t_null,.value=NULL});
       }
       free(key);
       i+=inner_token_num;

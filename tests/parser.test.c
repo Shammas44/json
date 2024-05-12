@@ -88,7 +88,7 @@ Test(json_to_map, get_primitive, .fini = map_teardown) {
 
 Test(json_to_map, get_empty_string, .fini = map_teardown) {
   char json[] = "{"
-                "\"company\":\"\","
+                "\"company\":\"\""
                 "}";
   JSON_Item item = JSON_parse(json);
   h = item.value;

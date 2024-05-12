@@ -5,7 +5,7 @@
 
 char employee[] = "{"
                   "\"firstname\":\"Doe\","
-                  "\"lastname\":\"John\","
+                  "\"lastname\":null,"
                   "\"age\":\"20\","
                   "\"children\":[\"Louis\",\"Sam\",\"Antoine\"],"
                   "\"job\":{"
