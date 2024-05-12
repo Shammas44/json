@@ -411,6 +411,7 @@ static void _$free_entry(Entry entry){
   bool is_destroyable = entry.is_destroyable;
   void *value = entry.value;
   free(entry.key);
+  if(value ==NULL) return;
   if (is_destroyable) {
     JSON_IsDestroyable *element = (JSON_IsDestroyable *)value;
     void (*destructor)(void *) = element->destructor;

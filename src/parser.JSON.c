@@ -100,6 +100,10 @@ static int _$to_array(char *json, JSON_Array**array,jsmntok_t *tokens, int token
       inner_token_num--;
       type = JSON_t_array;
       free(string);
+    }else if(strcmp(string, "null")==0){
+      value = NULL;
+      type = JSON_t_null;
+      free(string);
     }else {
       value = string;
       type = JSON_t_string;
@@ -183,10 +187,10 @@ static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           primitive_entry.type = JSON_t_bool;
           primitive_entry.value = primitive;
         }else if(strcasecmp(value, "null") == 0){
-          primitive = malloc(sizeof(char*) *5);
-          sprintf(primitive,"%s",value);
+          // primitive = malloc(sizeof(char*) *5);
+          // sprintf(primitive,"%s",value);
           primitive_entry.type = JSON_t_null;
-          primitive_entry.value = primitive;
+          primitive_entry.value = NULL;
         }else {
           primitive = malloc(sizeof(double));
           *(double*) primitive = atof(value);
@@ -219,7 +223,6 @@ static JSON_Map* _$json_to(char *json, jsmntok_t *tokens, int token_num) {
           LOG_ERROR("Unhandled type");
           break;
       }
-      //TODO: do I need to free the key ?
       free(key);
       i+=inner_token_num;
     }
