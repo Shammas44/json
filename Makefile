@@ -1,133 +1,161 @@
-# TIPS 
-# ===========================
-#
-# enable core
-# 	ulimit -c unlimited
-#
-# disable core
-# 	ulimit -c 0
-#
-# debug thread with following compiler flag:
-# 	-fsanitize=thread
-#
-# ===========================
+# --- Expected project structure ---
+# .
+# ├── bin
+# │   ├── test_runner
+# │   ├── main
+# │   ├── lib
+# │   │   ├── libx.a
+# │   │   └── libx.so
+# │   └── obj
+# │       └── x.o
+# ├── dev
+# ├── lib
+# ├── main.c
+# ├── src
+# │   ├── x.c
+# │   └── include
+# │       └── x.h
+# └── tests
+#     └── x.test.c
 
-# Library name
-# ---------------------------
-LIB_NAME = json
+# --- Project Configuration ---
+-include .env
+# Available env variable are:
+# - PROJECT_NAME= name
+# - USER_SHARED_LIBS= lib1 lib2 lib3
 
-# FLAGS
-# ---------------------------
-CC = gcc
-FLAGS = -Wall -Wextra -Werror -g
+# --- Build Tools ---
+CC := gcc
+AR := ar
+# Check the operating system to set correct linker flags for shared libraries
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), Darwin)
+    # macOS linker flags
+    SHARED_LDFLAGS := -Wl,-install_name,/usr/local/lib/lib$(PROJECT_NAME).so
+else
+    # Linux linker flags
+    SHARED_LDFLAGS := -Wl,-soname,lib$(PROJECT_NAME).so
+endif
 
-# to set the option: export OPTION=<prod|dev|test>; make <target>
+# --- Build Options ---
+BASE_CFLAGS := -Wall -Wextra -Werror
 ifeq ($(OPTION), prod)
-	FLAGS = -Wall -Wextra -Werror
+  CFLAGS := $(BASE_CFLAGS) -O2
+else ifeq ($(OPTION), dev)
+  CFLAGS := $(BASE_CFLAGS) -g
+else ifeq ($(OPTION), test)
+  CFLAGS := $(BASE_CFLAGS) -g -Wno-builtin-declaration-mismatch -Wno-implicit-function-declaration -fPIC
+else
+  CFLAGS := $(BASE_CFLAGS) -g -fPIC
 endif
-ifeq ($(OPTION), dev)
-	FLAGS = -Wall -Wextra -Werror -g
-endif
-ifeq ($(OPTION), test)
-	FLAGS = -Wno-builtin-declaration-mismatch -Wno-implicit-function-declaration
-endif
 
-# Directories
-# ---------------------------
-SRC_DIR = src
-BIN_DIR = bin
+# --- Directories ---
+SRC_DIR := src
+BIN_DIR := bin
+OBJ_DIR := $(BIN_DIR)/obj
+LIB_DIR := $(BIN_DIR)/lib
+TEST_DIR := tests
 
-# Library sources
-# ---------------------------
-LIB_SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-LIB_OBJS = $(LIB_SRC_FILES:$(SRC_DIR)/%.c=$(SRC_DIR)/%.o)
+PREFIX := /usr/local
+INSTALL_LIB_DIR := $(PREFIX)/lib
+INSTALL_INCLUDE_DIR := $(PREFIX)/include/$(PROJECT_NAME)
 
-# Main application source files
-# ---------------------------
-MAIN_SRC_FILES = main.c
-MAIN_OBJS = $(MAIN_SRC_FILES:%.c=$(BIN_DIR)/%.o)
+# --- Source Files and Objects ---
+SRC_FILES := $(shell find $(SRC_DIR) -type f -name "*.c")
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+TEST_SRC_FILES := $(wildcard $(TEST_DIR)/*.c)
+TEST_OBJS := $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test_%.o,$(TEST_SRC_FILES))
 
-# Link against the library
-# ---------------------------
+# --- Libraries ---
+TEST_LIBS := criterion
+LINK_USER_SHARED_LIBS := $(patsubst %, -l%, $(USER_SHARED_LIBS))
+LINK_TEST_LIBS := $(patsubst %, -l%, $(TEST_LIBS))
+# Corrected find commands to search within the lib directory
+STATIC_LIB_BIN_PATHS := $(shell find lib -maxdepth 2 -type d -name "bin")
+STATIC_LIB_INCLUDE_PATHS := $(shell find lib -maxdepth 2 -type d -name "include")
+LDFLAGS := -L $(LIB_DIR) -L/usr/local/lib $(patsubst %, -L%, $(STATIC_LIB_BIN_PATHS))
+LDLIBS := -l$(PROJECT_NAME) $(LINK_USER_SHARED_LIBS)
 
-# Add the include directory of the librairies to the include path
-INC_LIB_DIR:=$(shell find -L lib -type d -name "include")
-INC_STATIC_LIB:=$(foreach dir,$(INC_LIB_DIR),-I $(dir))
+SRC_INCLUDE_PATHS := $(shell find $(SRC_DIR) -type d)
+INC_FLAGS := $(patsubst %, -I%, $(SRC_INCLUDE_PATHS)) -I/usr/local/include $(patsubst %, -I%, $(STATIC_LIB_INCLUDE_PATHS))
 
-# Add the bin directory of the librairies to the include path
-LIB_BIN_DIR:=$(shell find -L lib -type d -name "bin")
-INC_STATIC_BIN:=$(foreach dir,$(LIB_BIN_DIR),-L $(dir))
+MAIN_APP := $(BIN_DIR)/main
+TEST_APP := $(BIN_DIR)/test_runner
 
-# Add the librairies to the include path
-LIBS_BASENAME:= $(shell find -L lib -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
-INC_LIBS:=$(foreach dir,$(LIBS_BASENAME),-l $(dir))
+# --- Phony Targets ---
+.PHONY: all static shared test main run run_test clean install uninstall bear dirs
 
-EXTRA_LIBS = -l ssl -l crypto
-LIBS = $(INC_STATIC_BIN) $(INC_LIBS) $(EXTRA_LIBS) 
-LINK = -L $(BIN_DIR) -L /usr/local/lib -l $(LIB_NAME)
-INC = -I src/include -I /usr/local/include $(INC_STATIC_LIB) 
-LIB_TEST=-l criterion
+# --- Main Targets ---
+all: static
 
-SOURCES:=$(shell find ./src -type f -name "*.c" )
-TEST_FILES = $(wildcard tests/*.c)
-SOURCES_TEST=$(SOURCES) $(wildcard tests/*.c)
-OBJS=$(SOURCES:%.c=%.o)
-OBJS_TEST=$(OBJS) $(SOURCES_TEST:%.c=%.o)
+bear: clean dirs
+	@echo "Generating compile_commands.json..."
+	@bear -- $(MAKE) all
+	@echo "compile_commands.json generated."
 
-# Phony targets
-# ---------------------------
-.PHONY: all library clean_o clean_bin clean bear main exec run_test
+# --- Directories ---
+dirs:
+	@mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
 
-# Targets
-# ---------------------------
+# --- Build Static Library ---
+static: $(LIB_DIR)/lib$(PROJECT_NAME).a
+$(LIB_DIR)/lib$(PROJECT_NAME).a: $(OBJS) | dirs
+	@echo "[AR] $@"
+	@$(AR) rcs $@ $^
 
-#default target
-all: library
+# --- Build Shared Library ---
+shared: $(LIB_DIR)/lib$(PROJECT_NAME).so
+$(LIB_DIR)/lib$(PROJECT_NAME).so: $(OBJS) | dirs
+	@echo "[CC-shared] $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS) $(SHARED_LDFLAGS)
 
-truc:
-	echo $(FLAGS)
-# Generate compile_commands.json file for clangd
-bear:
-	make clean; bear -- make all
+# --- Main Executable ---
+main: $(MAIN_APP)
+$(MAIN_APP): $(OBJ_DIR)/main.o $(LIB_DIR)/lib$(PROJECT_NAME).so | dirs
+	@echo "[CC] Linking $@"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS) -Wl,-rpath,$(INSTALL_LIB_DIR)
 
-# Lib shortcut target
-library: lib$(LIB_NAME).a
+# --- Test Executable ---
+test: $(TEST_APP)
+$(TEST_APP): $(TEST_OBJS) $(LIB_DIR)/lib$(PROJECT_NAME).so | dirs
+	@echo "[CC] Linking $@"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS) $(LINK_TEST_LIBS) -Wl,-rpath,$(INSTALL_LIB_DIR)
 
-# Rule to build library
-lib$(LIB_NAME).a: $(LIB_OBJS)
-	ar rcs $(BIN_DIR)/$@ $^ 
+# --- Compile Rules ---
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | dirs
+	@mkdir -p $(dir $@)
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(INC_FLAGS) -c $< -o $@
 
-# Rule to build library object files
-%.o: %.c
-	$(CC) $(FLAGS) $(INC) -c $< -o $@ 
+$(OBJ_DIR)/main.o: main.c | dirs
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(INC_FLAGS) -c $< -o $@
 
-test: $(TEST_FILES:.c=.o)
-	$(CC) $(FLAGS) $^ -o $(BIN_DIR)/$@ $(LINK) $(INC_STATIC_BIN) $(INC_LIBS) $(LIB_TEST)  
+$(OBJ_DIR)/test_%.o: $(TEST_DIR)/%.c | dirs
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(INC_FLAGS) -c $< -o $@
 
-# Rule to build main application
-main: library main.o
-	$(CC) $(FLAGS) $@.c -o $(BIN_DIR)/$@ $(INC) $(LINK) $(LIBS)
+# --- Install/Uninstall ---
+install: static shared
+	@mkdir -p $(INSTALL_LIB_DIR) $(INSTALL_INCLUDE_DIR)
+	@cp $(LIB_DIR)/*.a $(LIB_DIR)/*.so $(INSTALL_LIB_DIR)/
+	@cp -R $(SRC_DIR)/include/* $(INSTALL_INCLUDE_DIR)/ | true
+	@echo "Installed to $(PREFIX)"
 
-# Rule to build main application object files
-main.o: main.c
-	$(CC) $(FLAGS) $(INC) -c $< -o $@
+uninstall:
+	@rm -f $(INSTALL_LIB_DIR)/lib$(PROJECT_NAME).a
+	@rm -f $(INSTALL_LIB_DIR)/lib$(PROJECT_NAME).so
+	@rm -rf $(INSTALL_INCLUDE_DIR)
+	@echo "Uninstalled from $(PREFIX)"
 
-# Rule to execute the main application
-exec: main
-	./bin/main
+# --- Run Targets ---
+run: $(MAIN_APP)
+	@$(MAIN_APP)
 
-run_test: test
-	./$(BIN_DIR)/test
+run_test: $(TEST_APP)
+	@$(TEST_APP)
 
-# Remove every object files and binary files
-clean: clean_o clean_bin
-
-# Remove every object file in the project
-clean_o: 
-	@echo "cleaning..."
-	find . -name "*.o" -delete
-
-# Remove every exectuable file in the root directory
-clean_bin:
-	rm  -rf ./$(BIN_DIR)/*;
-
+# --- Clean Targets ---
+clean:
+	@echo "Clean targets"
+	@rm -rf $(BIN_DIR)

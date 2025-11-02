@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <criterion/criterion.h>
 #include <json.h>
-#include <logger.h>
+#include <logger/logger.h>
 #define T JSON_Array
 
 static T *a = NULL;

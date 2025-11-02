@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <logger.h>
+#include <logger/logger.h>
 #include "jsmn.JSON.h"
 #include "Map.JSON.h"
 #include "parser.JSON.h"
